@@ -3,10 +3,9 @@ package cn.xhh.car.booking.Controller;
 import cn.xhh.car.booking.service.BookingService;
 import cn.xhh.car.booking.service.UserService;
 import cn.xhh.car.booking.util.HttpResult;
+import java.util.Objects;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,9 +27,10 @@ public class BookingController {
     private UserService userService;
 
     @PostMapping("/bookCar")
-    public HttpResult<Long> bookCar(
-            @NotNull(message = "carModelId is null")Long carModelId,
-            HttpServletRequest request){
+    public HttpResult<Long> bookCar(Long carModelId,HttpServletRequest request){
+        if(Objects.isNull(carModelId)){
+            return HttpResult.failure("CarModelId is null", null);
+        }
         String token = request.getHeader("token");
         Long userId = userService.getUserIdFrom(token);
         Long bookingOrderId = bookingService.bookCar(carModelId, userId);
@@ -38,9 +38,11 @@ public class BookingController {
     }
 
     @PostMapping("/returnCar")
-    public HttpResult<Void> returnCar(
-            @NotNull(message = "bookingOrderId is null")Long bookingOrderId,
-            HttpServletRequest request){
+    public HttpResult<Void> returnCar(Long bookingOrderId, HttpServletRequest request){
+        if(Objects.isNull(bookingOrderId)){
+            return HttpResult.failure("BookingOrderId is null", null);
+        }
+
         String token = request.getHeader("token");
         Long userId = userService.getUserIdFrom(token);
         bookingService.returnCar(bookingOrderId, userId);
