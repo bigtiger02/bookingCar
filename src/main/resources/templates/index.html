@@ -1,0 +1,155 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Booking Car Service</title>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<style type="text/css">
+</style>
+
+</head>
+<body>
+
+<div>
+  <div>login</div>
+  <div>
+    <input type="text" id="userName" name="userName" placeholder="user name"/>
+    <input type="password" id="password" name="password" placeholder="password"/>
+    <button onclick="doRegister();">Register</button>
+    <button onclick="doLogin();">Log In</button>
+  </div>
+</div>
+
+<div style="margin-top:30px">
+  <div>Car Model List</div>
+  <table border="1" id="table">
+    <tr><td style="width: 200px">Car Model</td><td style="width: 100px">Left Stock</td><td style="width: 200px">Options</td></tr>
+  </table>
+</div>
+
+<div style="margin-top:30px">
+  <div>Return Car</div>
+  <input type="text" id="bookingOrderId" placeholder="booking order id"/><button onclick="returnCar();">Return Car</button>
+</div>
+
+</body>
+<script type="text/javascript">
+  var authToken = "";
+  function doRegister(){
+    var userName = document.getElementById("userName").value;
+    var password = document.getElementById("password").value;
+    var formData = new FormData();
+    formData.append("userName", userName);
+    formData.append("password", password);
+    axios({
+      method: "POST",
+      url: "/user/register",
+      data: formData,
+    }).then(function (resp) {
+      console.log(resp);
+      var msg = "register success";
+      if(resp.data.code != 200){
+        msg = resp.data.message;
+      }
+
+      alert(msg);
+    });
+  }
+
+  function doLogin(){
+    var userName = document.getElementById("userName").value;
+    var password = document.getElementById("password").value;
+    authToken = "";
+
+    var formData = new FormData();
+    formData.append("userName", userName);
+    formData.append("password", password);
+    axios({
+      method: "POST",
+      url: "/user/login",
+      data: formData,
+    }).then(function (resp) {
+      console.log(resp);
+      var msg = "login success";
+      if(resp.data.code != 200){
+        msg = resp.data.message;
+      }else {
+        authToken = resp.data.data.token;
+      }
+      alert(msg);
+    });
+  }
+
+  function bookCar(carModelId){
+    var formData = new FormData();
+    formData.append("carModelId", carModelId);
+    axios({
+      method: "POST",
+      url: "/booking/bookCar",
+      data: formData,
+      headers: { "token": authToken },
+    }).then(function (resp) {
+      console.log(resp);
+      var msg;
+      if(resp.data.code != 200){
+        msg = resp.data.message;
+      }else{
+        msg = "reserve car success, the bookingOrderId is " + resp.data.data;
+        refreshCarModel();
+      }
+      alert(msg);
+    });
+  }
+
+  function returnCar(){
+    var bookingOrderId = document.getElementById("bookingOrderId").value;
+    var formData = new FormData();
+    formData.append("bookingOrderId", bookingOrderId);
+    axios({
+      method: "POST",
+      url: "/booking/returnCar",
+      data: formData,
+      headers: { "token": authToken },
+    }).then(function (resp) {
+      console.log(resp);
+      var msg = "return car success";
+      if(resp.data.code != 200){
+        msg = resp.data.message;
+      }else{
+        refreshCarModel();
+      }
+      alert(msg);
+    });
+  }
+
+  function refreshCarModel(){
+    var table = document.getElementById("table");
+    var tableRows = table.getElementsByTagName('tr');
+    var rowCount = tableRows.length;
+    for (var x=rowCount-1; x>0; x--) {
+      table.removeChild(tableRows[x]);
+    }
+
+    axios.get('/carModel/list')
+    .then(function (resp) {
+      console.log(resp);
+      for(var i=0; i < resp.data.data.list.length;i++){
+        var tr = document.createElement("tr");
+        var td1 = document.createElement("td");
+        td1.append(resp.data.data.list[i].name);
+        var td2 = document.createElement("td");
+        td2.append(resp.data.data.list[i].stock);
+        var td3 = document.createElement("td");
+        var btn = document.createElement("button");
+        btn.append("Reserve");
+        btn.setAttribute("onclick","bookCar("+resp.data.data.list[i].id+")");
+        td3.append(btn);
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        table.appendChild(tr);
+      }
+    });
+  }
+  refreshCarModel();
+</script>
+</html>
